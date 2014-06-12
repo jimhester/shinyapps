@@ -1,4 +1,18 @@
+runtimeEncoding <- function(locale = Sys.getlocale('LC_CTYPE')) {
+  localeToCharset(locale)
+}
 
+runtimeLanguage <- function(locale = Sys.getlocale('LC_CTYPE')) {
+  x <- strsplit(locale, ".", fixed = TRUE)[[1L]]
+  if (length(x) == 2)
+    lang <- x[1]
+  else
+    lang <- locale  
+}
+
+runtimeVersion <- function() {
+  R.Version()
+}
 
 bundleApp <- function(appDir) {
 
@@ -92,8 +106,11 @@ createAppManifest <- function(appDir, files, users) {
   
   # create the manifest
   manifest <- list()
-  manifest$version <- 1
-  manifest$platform <- R.version.string
+  manifest$version <- 2
+  manifest$runtime <- list() 
+  manifest$runtime$encoding <- runtimeEncoding() 
+  manifest$runtime$language <- runtimeLanguage()
+  manifest$runtime$version <- runtimeVersion()
   
   # if there are no packages set manifes$packages to NA (json null)
   if (length(packages) > 0) {
