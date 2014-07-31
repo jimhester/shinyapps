@@ -13,7 +13,10 @@ shinyUI(fluidPage(
   titlePanel("Old Faithful Geyser Data"),
   
   # Some image
-  img(src="/images/icon.png"),  
+  img(src="/images/icon.png"),
+  
+  # Some legal bit of code that the linter should ignore
+  h1(withMathJax(sprintf("\\(\\mathbb{P}(X \\le x) = \\) %.03f", 3.14))),
 
   # Sidebar with a slider input for number of bins
   sidebarLayout(
