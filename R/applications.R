@@ -135,43 +135,35 @@ showLogs <- function(appDir = getwd(), appName = NULL, account = NULL,
     # if streaming, fork a new R process to do the blocking operation
     rPath <- file.path(R.home("bin"), "R")
     killfile <- tempfile()
-    outfile <- tempfile()
     
-    # remove the output filewhen done. don't remove the killfile; wait for the 
-    # forked process to do that when it's finished (happens async after we 
-    # exit)
-    on.exit(unlink(outfile), add = TRUE)
+    # TODO: establish whether port is in use
+    port <- 3000 + (sample(5000, 1)-1)
 
     # form the command 
     cmd <- paste0("shinyapps:::showStreamingLogs(", 
                   "account = '", target$account, "', ", 
                   "applicationId = '", application$id, "', ", 
                   "entries = ", entries, ", ", 
+                  "port = ", port, ", ",
                   "killfile = '", killfile, "')")
     args <- paste("--vanilla", "--slave", paste0("-e \"", cmd, "\""))
 
-    # execute the command, then wait for the file to which output will be 
-    # written to exist
-    system2(command = rPath, args = args, stdout = outfile, stderr = outfile, 
+    system2(command = rPath, args = args, stdout = NULL, stderr = NULL, 
             wait = FALSE)
-    repeat {
-      tryCatch({
-        logReader <- file(outfile, open = "rt", blocking = FALSE)
-        break
-      }, 
-      error = function(e, ...) { Sys.sleep(0.1) }, 
-      warning = function (...) {})
-    }
     
-    # once the file is open, close it when finished
-    on.exit(close(logReader), add = TRUE)
+    repeat tryCatch({
+      conn <- socketConnection(port = port, server = FALSE, timeout = 1)
+      break
+    }, error = function(e, ...) {})
+    
+    on.exit(close(conn), add = TRUE)    
     
     # read from the output file until interrupted
     repeat {
       tryCatch({
         if (file.exists(killfile))
           break
-        writeLines(readLines(con = logReader, warn = FALSE))
+        writeLines(readLines(con = conn, warn = FALSE))
         Sys.sleep(0.1)
       },
       interrupt = function(...) {
@@ -191,7 +183,8 @@ showLogs <- function(appDir = getwd(), appName = NULL, account = NULL,
 }
 
 # blocks for network traffic--should be run in a child process
-showStreamingLogs <- function(account, applicationId, entries, killfile) {
+showStreamingLogs <- function(account, applicationId, entries, port,
+                              killfile) {
   # get account information
   accountInfo <- accountInfo(account)  
   lucid <- lucidClient(accountInfo)
@@ -199,13 +192,17 @@ showStreamingLogs <- function(account, applicationId, entries, killfile) {
   # remove the killfile when we're done
   on.exit(unlink(killfile), add = TRUE)
   
+  # open a socket connection 
+  socket <- socketConnection(port = port, server = TRUE)
+  on.exit(close(socket), add = TRUE)
+  
   # the server may time out the request after a few minutes--keep asking for it
   # until interrupted by the presence of the killfile
   skip <- 0
   repeat {
   tryCatch({
              lucid$getLogs(applicationId, entries, TRUE, 
-                           writeLogMessage(killfile, skip))
+                           writeLogMessage(socket, killfile, skip))
              if (file.exists(killfile)) 
                break
              # after the first fetch, we've seen all recent entries, so show 
@@ -225,13 +222,13 @@ showStreamingLogs <- function(account, applicationId, entries, killfile) {
   }
 }
 
-writeLogMessage <- function(killfile, skip) {
+writeLogMessage <- function(conn, killfile, skip) {
   update = function(data) {
     # write incoming log data to the console
     if (skip > 0) {
       skip <<- skip - 1 
     } else {
-      cat(data) 
+      cat(data, file = conn) 
     }
     nchar(data, "bytes") 
   }
