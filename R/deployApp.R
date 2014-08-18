@@ -120,7 +120,7 @@ deployApp <- function(appDir = getwd(),
     
   # get the application to deploy (creates a new app on demand)
   withStatus("Preparing to deploy application", {
-    application <- applicationForTarget(lucid, accountInfo, target)
+    application <- applicationForTarget(lucid, accountInfo, target, connectVersion)
   })
 
   if (upload) {
@@ -292,7 +292,7 @@ getAppByName <- function(lucid, accountInfo, name) {
 
 # get the application associated with the passed deployment target
 # (creates a new application if necessary)
-applicationForTarget <- function(lucid, accountInfo, target) {
+applicationForTarget <- function(lucid, accountInfo, target, connectVersion = NULL) {
 
   # list the existing applications for this account and see if we 
   # need to create a new application
@@ -310,8 +310,13 @@ applicationForTarget <- function(lucid, accountInfo, target) {
   
   # create the application if we need to
   if (is.null(app)) {
+    if (is.null(connectVersion)) {
+        type <- "shiny"
+    } else {
+        type <- "connect"
+    }
     app <- lucid$createApplication(target$appName, 
-                                   "shiny", 
+                                   type, 
                                    accountInfo$accountId)
   }
   
