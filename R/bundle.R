@@ -1,6 +1,6 @@
 
 
-bundleApp <- function(appDir) {
+bundleApp <- function(appDir, connect_version=NULL) {
 
   # create a directory to stage the application bundle in
   bundleDir <- tempfile()
@@ -33,7 +33,7 @@ bundleApp <- function(appDir) {
   users <- authorizedUsers(appDir)
   
   # generate the manifest and write it into the bundle dir
-  manifestJson <- enc2utf8(createAppManifest(appDir, files, users))
+  manifestJson <- enc2utf8(createAppManifest(appDir, files, users, connect_version))
   writeLines(manifestJson, file.path(bundleDir, "manifest.json"), useBytes=TRUE)
   
   # create the bundle and return it's path
@@ -44,7 +44,7 @@ bundleApp <- function(appDir) {
   bundlePath
 }
 
-createAppManifest <- function(appDir, files, users) {
+createAppManifest <- function(appDir, files, users, connect_version) {
    
   # provide package entries for all dependencies
   packages <- list()
@@ -94,6 +94,9 @@ createAppManifest <- function(appDir, files, users) {
   manifest <- list()
   manifest$version <- 1
   manifest$platform <- paste(R.Version()$major, R.Version()$minor, sep=".") 
+  if (!is.null(connect_version)) {
+    manifest$connect_version <- connect_version
+  }
   
   # if there are no packages set manifes$packages to NA (json null)
   if (length(packages) > 0) {

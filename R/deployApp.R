@@ -61,7 +61,8 @@ deployApp <- function(appDir = getwd(),
                       launch.browser = getOption("shinyapps.launch.browser",
                                                  interactive()),
                       quiet = FALSE,
-                      lint = TRUE) {
+                      lint = TRUE,
+                      connectVersion = NULL) {
    
   if (!isStringParam(appDir))
     stop(stringParamErrorMessage("appDir"))
@@ -125,7 +126,7 @@ deployApp <- function(appDir = getwd(),
   if (upload) {
     # create, and upload the bundle
     withStatus("Uploading application bundle", {
-      bundlePath <- bundleApp(appDir)
+      bundlePath <- bundleApp(appDir, connectVersion)
       bundle <- lucid$uploadApplication(application$id, bundlePath)
     })
   } else {
