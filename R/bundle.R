@@ -122,17 +122,20 @@ getRepository <- function(description) {
   priority <- description$Priority
   repository <- description$Repository
   githubRepo <- description$GithubRepo
+  bioconductor <- description$biocViews
   if (is.null(repository)) {
     if (identical(priority, "base") || identical(priority, "recommended"))
       repository <- "CRAN"
     else if (!is.null(githubRepo))
       repository <- "GitHub"
+    else if (!is.null(bioconductor))
+      repository <- "Bioconductor"
   }
   repository
 }
 
 validateRepository <- function(pkg, repository) {
-  if (!identical(repository, "CRAN") && !identical(repository, "GitHub")) {
+  if (!identical(repository, "CRAN") && !identical(repository, "GitHub") && !identical(repository, "Bioconductor")) {
     msg <- paste("Unable to deploy package dependency '", pkg, "'\n\n", sep="")
     if (is.null(repository))
       msg <- paste(msg, "The package was installed locally from source.",
@@ -140,7 +143,7 @@ validateRepository <- function(pkg, repository) {
     else 
       msg <- paste(msg, " The package was installed from an unsupported ",
                    "repository '", repository, "'.", sep="")
-    msg <- paste(msg, " Only packages installed from CRAN or GitHub are ",
+    msg <- paste(msg, " Only packages installed from CRAN, Bioconductor or GitHub are ",
                  "supported.\n", sep="")
     if (!hasRequiredDevtools()) {
       msg <- paste(msg, "\nTo use packages from GitHub you need to install ",
