@@ -19,7 +19,7 @@
 #' }
 #' @seealso \code{\link{applications}}, \code{\link{deployApp}}
 #' @export
-configureApp <- function(appName, appDir=getwd(), account = NULL, redeploy = TRUE, size = NULL, instances = NULL, quiet = FALSE) {
+configureApp <- function(appName, appDir=getwd(), account = NULL, redeploy = TRUE, size = NULL, instances = NULL, compiler = NULL, quiet = FALSE) {
   
   # resolve target account and application
   accountInfo <- accountInfo(resolveAccount(account))
@@ -37,6 +37,10 @@ configureApp <- function(appName, appDir=getwd(), account = NULL, redeploy = TRU
   }
   if (! is.null(instances) ) {
     properties[[ "application.instances.count" ]] = instances
+  }
+
+  if (! is.null(compiler) ) {
+    properties[[ "application.base-image.compiler" ]] = compiler
   }
 
   # set application properties
