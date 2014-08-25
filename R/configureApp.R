@@ -44,7 +44,7 @@ configureApp <- function(appName, appDir=getwd(), account = NULL, redeploy = TRU
   for (i in names(properties)) {
     propertyName <- i
     propertyValue <- properties[[i]]
-    lucid$configureApplication(application$id, propertyName, propertyValue)
+    lucid$setApplicationProperty(application$id, propertyName, propertyValue)
   }
 
   # redeploy application if requested
